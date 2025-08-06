@@ -1,0 +1,68 @@
+- name: Deploy Dockerized Web Application
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    web_image: "{{ dockerhub_username }}/web-application:latest"
+
+  tasks:
+    - name: Install Python and pip
+      apt:
+        name: ['python3-pip', 'python3']
+        state: present
+        update_cache: yes
+
+    - name: Install Docker SDK for Python
+      pip:
+        name: docker
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is started
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add current user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Pull web application image from Docker Hub
+      docker_image:
+        name: "{{ web_image }}"
+        source: pull
+
+    - name: Run web application container
+      docker_container:
+        name: web_application
+        image: "{{ web_image }}"
+        state: started
+        ports:
+          - "80:80"
+        restart_policy: always
+        recreate: yes
+
+    - name: Show the EC2 Public IP address
+      debug:
+        msg: "The EC2 instance public IP is: {{ ansible_host }}"
+
+    - name: Show EC2 Private IP
+      debug:
+        msg: "The EC2 private IP is: {{ ansible_default_ipv4.address }}"
+
+    - name: Wait for the web app to become available
+      uri:
+        url: "http://{{ ansible_host }}"
+        status_code: 200
+      register: result
+      retries: 10
+      delay: 5
+      until: result.status == 200
