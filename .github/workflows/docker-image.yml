@@ -86,15 +86,7 @@ jobs:
         working-directory: ./terraform
         run: echo "public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
 
-      - name: Export private key safely
-        id: export-key
-        working-directory: ./terraform
-        run: |
-          {
-            echo "private_key<<EOF"
-            terraform output -raw private_key_pem
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+      
 
   ansible_deploy:
     needs: deploy-terraform
@@ -114,14 +106,13 @@ jobs:
           sudo apt-get install -y ansible sshpass
           pip install boto3
 
-      - name: Save SSH Private Key
+      - name: Add SSH Key
         run: |
           mkdir -p ~/.ssh
-          cat <<EOF > ~/.ssh/id_rsa
-          ${{ needs.deploy-terraform.outputs.private_key }}
-          EOF
-                    chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
+  
       - name: Add Public Host Key and SSH Config
         run: |
           mkdir -p ~/.ssh
@@ -143,6 +134,12 @@ jobs:
         run: |
           echo "[web]" > inventory
           echo "$EC2_PUBLIC_IP ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> inventory
+      
+      - name: Create Ansible Config
+        run: |
+          echo "[defaults]" > ansible.cfg
+          echo "host_key_checking = False" >> ansible.cfg
+          echo "inventory = ./inventory" >> ansible.cfg
 
       - name: Run Ansible Playbook
         run: ansible-playbook -i inventory ./ansible/playbook.yml

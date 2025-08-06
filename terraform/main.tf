@@ -1,20 +1,9 @@
 
-resource "tls_private_key" "example" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+resource "aws_key_pair" "deployer" {
+  key_name   = "my-local-key"
+  public_key  = file("${path.module}/id_rsa.pub.pem")
 }
 
-resource "aws_key_pair" "generated_key" {
-  key_name   = "web-key"
-  public_key = tls_private_key.example.public_key_openssh
-}
-
-
-resource "local_file" "private_key" {
-  content  = tls_private_key.example.private_key_pem
-  filename = "${path.module}/web-key.pem"
-  file_permission = "0600"
-}
 
 
 
@@ -111,7 +100,7 @@ resource "aws_instance" "web" {
   subnet_id     = aws_subnet.main.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   associate_public_ip_address = true
-  key_name    = aws_key_pair.generated_key.key_name
+  key_name    = aws_key_pair.deployer.key_name
   tags = {
     Name = "web-instance"
   }
