@@ -21,5 +21,5 @@ output "private_key_pem" {
 }
 
 output "ec2_public_ip" {
-  value = aws_instance.web[0].public_ip
+  value = aws_instance.web.public_ip
 }
