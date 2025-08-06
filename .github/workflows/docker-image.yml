@@ -1,4 +1,4 @@
-name: Build, Push Docker Image & Ansible Deploy  HELLO
+name: Build, Push Docker Image & Ansible Deploy
 
 on:
   push:
