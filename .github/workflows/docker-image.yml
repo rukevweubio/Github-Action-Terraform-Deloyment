@@ -1,4 +1,4 @@
-name: Build, Push Docker Image & Ansible Deploy
+name: Build, Push Docker Image & Ansible Deploy hello
 
 on:
   push:
@@ -88,10 +88,21 @@ jobs:
         run: |
           echo "public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
 
-      - name: Terraform Output Private Key
-        id: output_private_key
-        working-directory: ./terraform
-        run: echo "private_key=$(terraform output -raw private_key_pem)" >> "$GITHUB_OUTPUT"
+      # - name: Terraform Output Private Key
+      #   id: output_private_key
+      #   working-directory: ./terraform
+      #   run: echo "private_key=$(terraform output -raw private_key_pem)" >> "$GITHUB_OUTPUT"
+
+
+      - name: Export private key safely
+        id: export-key
+        run: |
+          {
+            echo "private_key<<EOF"
+            terraform output -raw private_key_pem
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
 
   ansible_deploy:
     runs-on: ubuntu-latest
