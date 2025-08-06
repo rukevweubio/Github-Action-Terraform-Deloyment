@@ -4,34 +4,34 @@
   gather_facts: yes
 
   vars:
-    web_image: "{{ dockerhub_username }}/web-application:latest"
+    web_image: "rukevweubio/web-application:latest"
 
   tasks:
-    - name: Install Python and pip
-      apt:
-        name: ['python3-pip', 'python3']
+    - name: Install Python and pip (Amazon Linux)
+      package:
+        name:
+          - python3
+          - python3-pip
         state: present
-        update_cache: yes
-
-    - name: Install Docker SDK for Python
-      pip:
-        name: docker
 
     - name: Install Docker
-      apt:
-        name: docker.io
+      package:
+        name: docker
         state: present
-        update_cache: yes
 
-    - name: Ensure Docker service is started
+    - name: Start and enable Docker service
       service:
         name: docker
         state: started
         enabled: yes
 
-    - name: Add current user to docker group
+    - name: Install Docker SDK for Python
+      pip:
+        name: docker
+
+    - name: Add ec2-user to docker group
       user:
-        name: "{{ ansible_user }}"
+        name: "{{ ansible_ssh_user | default('ec2-user') }}"
         groups: docker
         append: yes
 
